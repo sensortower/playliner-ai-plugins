@@ -1,0 +1,15 @@
+{
+  "name": "playliner-ai-plugins",
+  "owner": {
+    "name": "Sensortower"
+  },
+  "description": "Playliner AI plugins for Claude Code",
+  "plugins": [
+    {
+      "name": "playliner",
+      "description": "Search articles in the Playliner database",
+      "source": "./plugins/playliner"
+    }
+  ],
+  "$schema": "https://code.claude.com/schemas/marketplace.json"
+}
