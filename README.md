@@ -9,7 +9,7 @@ Search Playliner game-industry news, games, tags, and genres directly from Claud
 In Claude Code, run:
 
 ```
-/plugin marketplace add sensortower/playliner-claude-plugin
+/plugin marketplace add sensortower/playliner-ai-plugins
 ```
 
 ### 2. Install the plugin
