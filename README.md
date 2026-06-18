@@ -6,6 +6,12 @@ Search Playliner game-industry news, games, tags, and genres directly from Claud
 
 ### 1. Add the Playliner marketplace
 
+Run Claude Code:
+
+```
+claude --permission-mode auto
+```
+
 In Claude Code, run:
 
 ```
