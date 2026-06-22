@@ -78,6 +78,91 @@ Articles can be filtered by game, tag, or genre. Use the corresponding endpoints
 
 **Cache** resolved results in `~/.config/playliner/cache/` (`games.json`, `tags.json`, `genres.json`). Reuse a cached entry if it is younger than 7 days; otherwise fetch and update the cache.
 
+When resolving **2 or more names on the same endpoint**, use a single multisearch call (see below) instead of sequential requests.
+
+
+## Multisearch
+
+Use when you need **2 or more queries against the same endpoint** in one call. All sub-searches go to the same collection (determined by the endpoint). Limit: **10 sub-searches per call**.
+
+Billing deduplicates across all article sub-searches — an article seen in multiple results counts only once.
+
+### Request format
+
+Send `searches` instead of a flat query object:
+
+```bash
+playliner-api.sh articles '{
+  "searches": [
+    {"q": "clash",  "filter_by": "games:=[123]", "per_page": 5},
+    {"q": "royale", "sort_by": "start:desc",      "per_page": 5}
+  ]
+}'
+```
+
+Same works for `games`, `tags`, `genres`.
+
+### Response format
+
+Multisearch wraps results in a `results` array — one entry per sub-search, in the same order:
+
+```json
+{
+  "results": [
+    {"hits": [...], "found": 12, "page": 1},
+    {"hits": [...], "found": 8,  "page": 1}
+  ]
+}
+```
+
+For grouped sub-searches the entry contains `grouped_hits` instead of `hits` (same as single-search grouping). **Do not confuse with single-search** — single search returns `hits` at the top level; multisearch always wraps everything in `results`.
+
+### When to use multisearch
+
+| Situation | Action |
+|-----------|--------|
+| Resolve 2+ game/tag/genre names | Single multisearch call to the respective endpoint |
+| Fetch articles for multiple games to compare | One `articles` multisearch, one `filter_by` per game |
+| Get different "views" of a topic at once (recent + grouped) | Multiple sub-searches in one call |
+| Single query | Plain single-search (no overhead) |
+
+### Pattern: resolve multiple games in one call
+
+```bash
+playliner-api.sh games '{
+  "searches": [
+    {"q": "Clash of Clans", "query_by": "title", "per_page": 1},
+    {"q": "Brawl Stars",    "query_by": "title", "per_page": 1}
+  ]
+}'
+# results[0] → Clash of Clans id
+# results[1] → Brawl Stars id
+```
+
+### Pattern: compare articles for two games
+
+```bash
+playliner-api.sh articles '{
+  "searches": [
+    {"q": "*", "filter_by": "games:=[111]", "sort_by": "start:desc", "per_page": 10},
+    {"q": "*", "filter_by": "games:=[222]", "sort_by": "start:desc", "per_page": 10}
+  ]
+}'
+```
+
+### Pattern: recent articles + latest-per-story in one call
+
+```bash
+playliner-api.sh articles '{
+  "searches": [
+    {"q": "battle pass", "sort_by": "start:desc", "per_page": 5},
+    {"q": "battle pass", "group_by": "gidOrId", "group_limit": 1, "sort_by": "start:desc", "per_page": 5}
+  ]
+}'
+# results[0] → raw recent articles
+# results[1] → deduplicated latest-per-story (grouped_hits)
+```
+
 
 ## Error handling quick reference
 
@@ -86,23 +171,30 @@ Articles can be filtered by game, tag, or genre. Use the corresponding endpoints
 - **403**: access denied — the token does not have permission to use the search API.
 - **422** "Invalid search request": usually a missing/mismatched `query_by`, or a
   field not allowed for this endpoint → fix the payload and retry.
+- **422** multisearch-specific errors:
+  - `searches must be an array` — passed an object instead of array; wrap in `[]`
+  - `searches[N] must be an object` — array element is not an object
+  - `No searches provided` — `searches` is an empty array; use at least 1 sub-search
+  - `Too many searches (max 10)` — split into multiple calls of ≤10 each
+  - `Field "X" is not available` — invalid field in one of the sub-searches; check allowed fields for the endpoint
 - **401**: token expired/invalid → offer to re-enter and overwrite credentials.
 
 ---
 
 ## API Reference
 
-All endpoints are `POST`, require `Authorization: Bearer <token>`, accept a JSON
-Typesense search payload, and return a sanitized JSON response.
+All `POST` endpoints require `Authorization: Bearer <token>`, accept a JSON Typesense
+search payload, and return a sanitized JSON response. Each endpoint supports both
+**single-search** (flat query object) and **multisearch** (`searches` array key).
 Base URL: `https://playliner-backend.sensortower.com`.
 
-| Endpoint | Purpose | Billed? |
-|----------|---------|---------|
-| `articles` | Full article search | **Yes** — first view deducts from token quota; over-quota → 402 |
-| `games`    | Resolve game name → id | No |
-| `tags`     | Resolve tag phrase → canonical name | No |
-| `genres`   | Resolve genre phrase → canonical name | No |
-| `usage`    | Token usage stats | No |
+| Endpoint | Purpose | Billed? | Multisearch? |
+|----------|---------|---------|--------------|
+| `articles` | Full article search | **Yes** — first view deducts from token quota; over-quota → 402 | Yes — billing deduplicates across all sub-results |
+| `games`    | Resolve game name → id | No | Yes |
+| `tags`     | Resolve tag phrase → canonical name | No | Yes |
+| `genres`   | Resolve genre phrase → canonical name | No | Yes |
+| `usage`    | Token usage stats (`GET`) | No | No |
 
 ### `usage`
 

@@ -36,20 +36,29 @@ fi
 BASE_URL="${PLAYLINER_BASE_URL:-https://playliner-backend.sensortower.com}"
 BASE_URL="${BASE_URL%/}"
 
-endpoint="${1:?endpoint required: articles|games|tags|genres}"
+endpoint="${1:?endpoint required: articles|games|tags|genres|usage}"
 if [[ $# -ge 2 ]]; then body="$2"; else body='{}'; fi
 
 case "$endpoint" in
-  articles|games|tags|genres) ;;
-  *) echo "ERROR: unknown endpoint '$endpoint' (expected articles|games|tags|genres)" >&2; exit 2 ;;
+  articles|games|tags|genres)
+    resp="$(printf '%s' "$body" | curl -sS -X POST "$BASE_URL/api/external/$endpoint" \
+      -H "Authorization: Bearer $PLAYLINER_TOKEN" \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      --data-binary @- \
+      -w $'\n%{http_code}')"
+    ;;
+  usage)
+    resp="$(curl -sS -X GET "$BASE_URL/api/external/usage${body:+?$body}" \
+      -H "Authorization: Bearer $PLAYLINER_TOKEN" \
+      -H "Accept: application/json" \
+      -w $'\n%{http_code}')"
+    ;;
+  *)
+    echo "ERROR: unknown endpoint '$endpoint' (expected articles|games|tags|genres|usage)" >&2
+    exit 2
+    ;;
 esac
-
-resp="$(printf '%s' "$body" | curl -sS -X POST "$BASE_URL/api/external/$endpoint" \
-  -H "Authorization: Bearer $PLAYLINER_TOKEN" \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  --data-binary @- \
-  -w $'\n%{http_code}')"
 
 code="${resp##*$'\n'}"
 json="${resp%$'\n'*}"
