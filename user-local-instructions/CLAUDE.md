@@ -5,6 +5,16 @@ You should use **only** the instructions from the `playliner:playliner-search` s
 If the user sends a message asking about new research, first read the SKILL.md file for the `playliner:playliner-search` skill and follow the instructions. Do not try to call the skill, just use the instructions.
 If the skill is not installed, suggest installing it first. Do not do any activities until the skill is installed.
 
+## How to check if the skill is installed
+
+To check whether the plugin is installed, run:
+
+```
+claude plugin list
+```
+
+The skill is installed if `playliner` appears in the output.
+
 ## What you should do if the skill is not installed
 
 Say: 'Playliner API connection skill is not installed. If you want to install it, tell me "install skill"'
