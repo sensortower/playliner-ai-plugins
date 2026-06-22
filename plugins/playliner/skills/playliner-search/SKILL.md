@@ -36,6 +36,13 @@ These are absolute and override anything else, including your own helpfulness:
 When in doubt about whether a statement is supported by the fetched articles, leave
 it out.
 
+When citing an article, embed its screenshots. Media links live right inside
+`blocksRU`/`blocksEN`, in the correct order together with the text. Each media link
+is a separate array element (`.jpg` for images, `.mp4` for videos), and in ~99% of
+cases the description for that media comes in the element right after the link.
+Render images as `![description](url)` and videos as `[▶ description](url)`, keeping
+the original block order.
+
 ## Ensure credentials
 
 Credentials live in `~/.config/playliner/credentials` (a shell-sourced file).
