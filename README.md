@@ -55,7 +55,7 @@ On first use, the plugin will ask for your Playliner Bearer token. You can find 
 
 ## Billing for article views
 
-Tokens are charged for viewing each article, but only the first time it is viewed. Subsequent views of the same article are free.
+Data credits are charged for viewing each article, but only the first time it is viewed. Subsequent views of the same article are free.
 
 ### Formula
 
@@ -66,12 +66,12 @@ TEXT   = ceil(chars / 4)
 
 IMAGES = count_images × 47
 
-VIDEO  = Σ VIDEO_TOKENS_COSTᵢ
+VIDEO  = Σ VIDEO_DATA_CREDIT_COSTᵢ
 ```
 
-`VIDEO_TOKENS_COST` is the token cost of a single video and depends on its duration:
+`VIDEO_DATA_CREDIT_COST` is the data credit cost of a single video and depends on its duration:
 
-| Duration range      | Tokens |
+| Duration range      | Data credits |
 |---------------------|--------|
 | d < 5 s             | 94     |
 | 5 s ≤ d < 30 s      | 141    |
@@ -90,7 +90,7 @@ TEXT   = ceil(2400 / 4)        = 600
 IMAGES = 5 × 47                = 235
 VIDEO  = 141 (15 s) + 235 (90 s) = 376
 
-COST   = 600 + 235 + 376      = 1211 tokens
+COST   = 600 + 235 + 376      = 1211 data credits
 ```
 
 ## Requirements

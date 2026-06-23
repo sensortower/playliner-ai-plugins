@@ -81,7 +81,7 @@ Credentials live in `~/.config/playliner/credentials` (a shell-sourced file).
    playliner-api.sh articles '{"q":"*","query_by":"titleEN","per_page":1}'
    ```
    - HTTP **403** → access denied; tell the user they don't have permission to use this API.
-   - HTTP **402** → token quota exhausted; tell the user to contact their administrator.
+   - HTTP **402** → data credit quota exhausted; tell the user to contact their administrator.
    - HTTP **401** → token invalid/expired; offer to re-enter it (overwrite the file).
 
 All API calls in later steps use the helper: `playliner-api.sh <endpoint> '<json-body>'`.
@@ -184,7 +184,7 @@ playliner-api.sh articles '{
 
 ## Error handling quick reference
 
-- **402** (articles only): token quota exhausted → tell the user to contact their
+- **402** (articles only): data credit quota exhausted → tell the user to contact their
   administrator, stop. (games/tags/genres are never billed.)
 - **403**: access denied — the token does not have permission to use the search API.
 - **422** "Invalid search request": usually a missing/mismatched `query_by`, or a
@@ -208,15 +208,15 @@ Base URL: `https://playliner-backend.sensortower.com`.
 
 | Endpoint | Purpose | Billed? | Multisearch? |
 |----------|---------|---------|--------------|
-| `articles` | Full article search | **Yes** — first view deducts from token quota; over-quota → 402 | Yes — billing deduplicates across all sub-results |
+| `articles` | Full article search | **Yes** — first view deducts from data credit quota; over-quota → 402 | Yes — billing deduplicates across all sub-results |
 | `games`    | Resolve game name → id | No | Yes |
 | `tags`     | Resolve tag phrase → canonical name | No | Yes |
 | `genres`   | Resolve genre phrase → canonical name | No | Yes |
-| `usage`    | Token usage stats (`GET`) | No | No |
+| `usage`    | Data credit usage stats (`GET`) | No | No |
 
 ### `usage`
 
-`GET /api/external/usage` — returns the number of unique articles read and total tokens spent. Optionally filtered by date range.
+`GET /api/external/usage` — returns the number of unique articles read and total data credits spent. Optionally filtered by date range.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -224,7 +224,7 @@ Base URL: `https://playliner-backend.sensortower.com`.
 | `dateEnd` | End date (`YYYY-MM-DD`), inclusive |
 
 ```json
-{ "articles": 42, "tokens": 18500 }
+{ "articles": 42, "dataCredit": 18500 }
 ```
 
 ### Allowed fields per endpoint
