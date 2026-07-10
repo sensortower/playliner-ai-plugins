@@ -1,6 +1,6 @@
 ---
 name: playliner-search
-description: Search Playliner game-industry articles, games, tags, and genres through the /api/external/* API and answer STRICTLY from the returned articles. Use when the user asks about game articles, releases, updates, monetization, or specific games/genres/tags and wants answers grounded only in Playliner data.
+description: Search Playliner game-industry articles, games, tags, and genres through the /api/v1/external/* API and answer STRICTLY from the returned articles. Use when the user asks about game articles, releases, updates, monetization, or specific games/genres/tags and wants answers grounded only in Playliner data.
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash(*), Read, Write, AskUserQuestion
@@ -10,7 +10,7 @@ argument-hint: "[your question about game articles]"
 # Playliner external search
 
 Answer the user's question — `$ARGUMENTS` — using ONLY the Playliner articles API
-(`/api/external/*`). This skill resolves the user's intent into Typesense search
+(`/api/v1/external/*`). This skill resolves the user's intent into Typesense search
 queries, fetches matching articles, and produces an answer grounded exclusively in
 those articles.
 
@@ -63,14 +63,14 @@ Credentials live in `~/.config/playliner/credentials` (a shell-sourced file).
    test -f ~/.config/playliner/credentials && echo EXISTS || echo MISSING
    ```
 2. If `MISSING`, ask the user for their **API token** with `AskUserQuestion` (or a
-   plain prompt). Tell them that they can get it here: https://app.sensortower.com/feature-insights/#premium.
-3. Once the user provides the token, save it (strip any leading `Bearer ` they paste):
+   plain prompt). Tell them that they can find it here: https://app.sensortower.com/users/edit/api-settings.
+3. Once the user provides the token, save it:
    ```bash
    mkdir -p ~/.config/playliner
    umask 077
    cat > ~/.config/playliner/credentials <<'EOF'
    PLAYLINER_TOKEN="PASTE_TOKEN_HERE"
-   PLAYLINER_BASE_URL="https://playliner-backend.sensortower.com"
+   PLAYLINER_BASE_URL="https://app.sensortower.com/playliner/api"
    EOF
    chmod 600 ~/.config/playliner/credentials
    ```
@@ -90,9 +90,9 @@ All API calls in later steps use the helper: `playliner-api.sh <endpoint> '<json
 
 Articles can be filtered by game, tag, or genre. Use the corresponding endpoints to resolve user input into IDs or canonical names:
 
-- `/external/games` — game name → numeric id
-- `/external/tags` — tag phrase → canonical name
-- `/external/genres` — genre phrase → canonical name
+- `/v1/external/games` — game name → numeric id
+- `/v1/external/tags` — tag phrase → canonical name
+- `/v1/external/genres` — genre phrase → canonical name
 
 **Cache** resolved results in `~/.config/playliner/cache/` (`games.json`, `tags.json`, `genres.json`). Reuse a cached entry if it is younger than 7 days; otherwise fetch and update the cache.
 
@@ -201,10 +201,10 @@ playliner-api.sh articles '{
 
 ## API Reference
 
-All `POST` endpoints require `Authorization: Bearer <token>`, accept a JSON Typesense
+All `POST` endpoints authenticate with the user's **API token**, accept a JSON Typesense
 search payload, and return a sanitized JSON response. Each endpoint supports both
 **single-search** (flat query object) and **multisearch** (`searches` array key).
-Base URL: `https://playliner-backend.sensortower.com`.
+Base URL: `https://app.sensortower.com/playliner/api`.
 
 | Endpoint | Purpose | Billed? | Multisearch? |
 |----------|---------|---------|--------------|
@@ -216,7 +216,7 @@ Base URL: `https://playliner-backend.sensortower.com`.
 
 ### `usage`
 
-`GET /api/external/usage` — returns the number of unique articles read and total data credits spent. Optionally filtered by date range.
+`GET /api/v1/external/usage` — returns the number of unique articles read and total data credits spent. Optionally filtered by date range.
 
 | Parameter | Description |
 |-----------|-------------|

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Thin wrapper around the Playliner /api/external/* search API.
+# Thin wrapper around the Playliner /api/v1/external/* search API.
 #
 # Usage:
 #   playliner-api.sh <endpoint> [json-body]
@@ -10,9 +10,9 @@
 #
 # Reads credentials from $PLAYLINER_CRED_FILE (default ~/.config/playliner/credentials),
 # a shell-sourced file that MUST define:
-#   PLAYLINER_TOKEN="<bearer token without the 'Bearer ' prefix>"
+#   PLAYLINER_TOKEN="<API token>"
 # and MAY define:
-#   PLAYLINER_BASE_URL="https://playliner-backend.sensortower.com"
+#   PLAYLINER_BASE_URL="https://app.sensortower.com/playliner/api"
 #
 # Prints the JSON response body to stdout. On a non-2xx HTTP status it also
 # prints "HTTP <code>" to stderr and exits 1, so the caller can detect errors.
@@ -33,7 +33,7 @@ if [[ -z "${PLAYLINER_TOKEN:-}" ]]; then
   exit 3
 fi
 
-BASE_URL="${PLAYLINER_BASE_URL:-https://playliner-backend.sensortower.com}"
+BASE_URL="${PLAYLINER_BASE_URL:-https://app.sensortower.com/playliner/api}"
 BASE_URL="${BASE_URL%/}"
 
 endpoint="${1:?endpoint required: articles|games|tags|genres|usage}"
@@ -41,7 +41,7 @@ if [[ $# -ge 2 ]]; then body="$2"; else body='{}'; fi
 
 case "$endpoint" in
   articles|games|tags|genres)
-    resp="$(printf '%s' "$body" | curl -sS -X POST "$BASE_URL/api/external/$endpoint" \
+    resp="$(printf '%s' "$body" | curl -sS -X POST "$BASE_URL/v1/external/$endpoint" \
       -H "Authorization: Bearer $PLAYLINER_TOKEN" \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
@@ -49,7 +49,7 @@ case "$endpoint" in
       -w $'\n%{http_code}')"
     ;;
   usage)
-    resp="$(curl -sS -X GET "$BASE_URL/api/external/usage${body:+?$body}" \
+    resp="$(curl -sS -X GET "$BASE_URL/v1/external/usage${body:+?$body}" \
       -H "Authorization: Bearer $PLAYLINER_TOKEN" \
       -H "Accept: application/json" \
       -w $'\n%{http_code}')"

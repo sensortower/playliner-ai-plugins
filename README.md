@@ -51,7 +51,7 @@ In Claude Code, run:
 /playliner:playliner-search what are the latest monetization updates for Clash of Clans?
 ```
 
-On first use, the plugin will ask for your Playliner Bearer token. You can find it on the [Playliner Premium page](https://app.sensortower.com/feature-insights/#premium).
+On first use, the plugin will ask for your Playliner API token. You can find it on the [API settings page](https://app.sensortower.com/users/edit/api-settings).
 
 ## Billing for article views
 
