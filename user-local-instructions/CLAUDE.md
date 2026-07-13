@@ -29,3 +29,11 @@ claude plugin install playliner@playliner-ai-plugins --scope user
 ```
 
 Then, tell the user that you installed the skill/plugin and they need to restart you: close the current session and open a new one, or send the message `/reload-plugins`.
+
+## Updating the plugin
+
+If the user asks you to update the plugin, run the following command:
+
+```
+claude plugin update playliner@playliner-ai-plugins
+```
