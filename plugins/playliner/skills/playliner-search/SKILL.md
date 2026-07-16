@@ -1,6 +1,6 @@
 ---
 name: playliner-search
-description: Search Playliner game-industry articles, games, tags, and genres through the /api/v1/external/* API and answer STRICTLY from the returned articles. Use when the user asks about game articles, releases, updates, monetization, or specific games/genres/tags and wants answers grounded only in Playliner data.
+description: Search Playliner game-industry articles, games, tags, and genres through the /api/v1/external/* API and answer STRICTLY from the returned articles. Use when the user asks about game articles, releases, updates, monetization, event performance/impact analytics (revenue, downloads, DAU uptrends), or specific games/genres/tags and wants answers grounded only in Playliner data.
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash(*), Read, Write, AskUserQuestion
@@ -41,7 +41,7 @@ it out.
 ## Formatting rules
 
 1. **Attach images as often as possible.** Media links live right inside
-   `blocksRU`/`blocksEN`, in the correct order together with the text — each is a
+   `blocksEN`, in the correct order together with the text — each is a
    separate array element (`.jpg` for images, `.mp4` for videos). Weave relevant images
    into the answer to visualize the text as much as possible. Render images with the alt text left empty (`![](url)`); render videos as a
    link `[▶ caption](url)`.
@@ -52,7 +52,7 @@ it out.
    ```
 3. **Format links correctly.** Cite an article as a markdown link whose clickable text is
    the article/game/tag/genre title or another short, relevant phrase —
-   `[title](https://app.sensortower.com/feature-insights/#news/view/{articleId})`.
+   `[title](https://app.sensortower.com/playliner/#news/view/{articleId})`.
 
 ## Ensure credentials
 
@@ -201,9 +201,10 @@ playliner-api.sh articles '{
 
 ## API Reference
 
-All `POST` endpoints authenticate with the user's **API token**, accept a JSON Typesense
-search payload, and return a sanitized JSON response. Each endpoint supports both
-**single-search** (flat query object) and **multisearch** (`searches` array key).
+All `POST` endpoints authenticate with the user's **API token** and return a sanitized
+JSON response. The search endpoints (`articles`, `games`, `tags`, `genres`) accept a
+JSON Typesense search payload and support both **single-search** (flat query object)
+and **multisearch** (`searches` array key); `analytics` uses its own filter payload.
 Base URL: `https://app.sensortower.com/playliner/api`.
 
 | Endpoint | Purpose | Billed? | Multisearch? |
@@ -212,6 +213,7 @@ Base URL: `https://app.sensortower.com/playliner/api`.
 | `games`    | Resolve game name → id | No | Yes |
 | `tags`     | Resolve tag phrase → canonical name | No | Yes |
 | `genres`   | Resolve genre phrase → canonical name | No | Yes |
+| `analytics` | Event performance analytics table | No | No |
 | `usage`    | Data credit usage stats (`GET`) | No | No |
 
 ### `usage`
@@ -227,6 +229,80 @@ Base URL: `https://app.sensortower.com/playliner/api`.
 { "articles": 42, "dataCredit": 18500 }
 ```
 
+### `analytics` — event performance analytics
+
+`POST /api/v1/external/analytics` — the event analytics table. Use it when you need
+to see **how events perform** based on revenue uptrend, downloads, DAU and other
+impact metrics: one row per event, with launch history and per-metric impact
+percentages.
+
+Not billed. No pagination — the whole matching table comes back
+in one response, so narrow the filters for large games/genres. No multisearch.
+
+```bash
+playliner-api.sh analytics '{
+  "filters": {
+    "games": [12345],
+    "keywords": "battle pass"
+  },
+  "lang": "en"
+}'
+```
+
+#### Request body
+
+All parameters are optional — `{}` returns the table with default filters.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `filters.games` | int[] | Unified game IDs — resolve names via `games` endpoint. Default: empty (no filter) |
+| `filters.tags` | int[] | Tag IDs — resolve via `tags` endpoint. Default: empty |
+| `filters.genres` | int[] | Genre IDs — resolve via `genres` endpoint. Default: empty |
+| `filters.keywords` | string | Substring match against event titles |
+| `lang` | string | Language of `title`. Use `en` |
+
+#### Response
+
+Rows arrive in the standard `{"success": true, "data": [...]}` envelope, one row per
+event. Empty values are omitted from a row — treat absence as "no recorded uptrend",
+not as a hard 0.
+
+| Column | Meaning |
+|--------|---------|
+| `id` | Article ID of the event. Article link: `https://app.sensortower.com/playliner/#news/view/{id}` |
+| `title` | Event title |
+| `game` | Title of the linked game |
+| `dateFirst` / `dateLast` | Dates of the first and most recent launch (`YYYY-MM-DD`) |
+| `repetitionCount` | How many times the event has run |
+| `durationMin` / `durationMax` / `durationAvg` | Shortest / longest / average launch duration, in days |
+| `impactfulLaunches` | % of the event's launches that coincided with a revenue uptrend |
+| `releaseRevenueImpact` | Revenue trend of the event's very first launch, in % |
+| `revenueImpact` | % of launches with a revenue uptrend |
+| `downloadsImpact` | % of launches with a downloads uptrend |
+| `dauImpact` | % of launches with a daily-active-users uptrend |
+| `timeSpentImpact` | % of launches with a time-spent uptrend |
+| `totalTimeSpentImpact` | % of launches with a total-time-spent uptrend |
+| `sessionDurationImpact` | % of launches with a session-duration uptrend |
+| `avgTimeSpentImpact` | % of launches with an average-time-spent uptrend |
+| `avgSessionCountImpact` | % of launches with an average-session-count uptrend |
+
+#### Access-dependent columns
+
+**Some metric columns may be unavailable due to insufficient account permissions.**
+`revenueImpact` and `downloadsImpact` are always included; the other impact metrics
+(`dauImpact`, `timeSpentImpact`, `totalTimeSpentImpact`, `sessionDurationImpact`,
+`avgTimeSpentImpact`, `avgSessionCountImpact`) each require the corresponding metric
+module to be enabled for the account, and columns without access are silently absent
+from every row. If a metric the user asks about is missing from **all** rows, the
+account likely lacks access to it — say so and suggest contacting the administrator;
+never present it as "no impact".
+
+#### Errors
+
+- **401** — token expired/invalid.
+- **403** — access denied: the token lacks permission for the external API or the analytics table module.
+- **422** — validation error in the request payload.
+
 ### Allowed fields per endpoint
 
 #### `articles`
@@ -236,15 +312,15 @@ Base URL: `https://app.sensortower.com/playliner/api`.
 | `id` | Article ID |
 | `gidOrId` | Unique identifier of an event series. All articles about the same event (across repeated launches or multiple versions) share the same value. Use this field to find all occurrences of an event, or to get the latest version by grouping on it. |
 | `newsGroupType` | Grouping type: `version` — new event or significant changes since the last launch; `shortVersion` — minor changes compared to previous launches; `repeat` — unchanged since the last version |
-| `titleRU` / `titleEN` | Article title |
-| `descriptionRU` / `descriptionEN` | Article short description |
-| `blocksRU` / `blocksEN` | Full article body text, split into blocks |
-| `tagsRU` / `tagsEN` | Tag names attached to the article |
-| `genresRU` / `genresEN` | Genre names of linked games |
+| `titleEN` | Article title |
+| `descriptionEN` | Article short description |
+| `blocksEN` | Full article body text, split into blocks |
+| `tagsEN` | Tag names attached to the article |
+| `genresEN` | Genre names of linked games |
 | `games` | Linked game IDs |
-| `gamesTitleRU` / `gamesTitleEN` | Titles of linked games |
+| `gamesTitleEN` | Titles of linked games |
 | `tagMain` | Main tag IDs |
-| `tagMainTitleRU` / `tagMainTitleEN` | Main tag title |
+| `tagMainTitleEN` | Main tag title |
 | `start` | Article start date (Unix timestamp) |
 | `finish` | Article end date (Unix timestamp) |
 | `duration` | Duration in days |
@@ -262,16 +338,16 @@ Base URL: `https://app.sensortower.com/playliner/api`.
 | Field | Description |
 |-------|-------------|
 | `id` | Tag ID |
-| `titleRU` / `titleEN` | Tag title |
-| `descriptionRU` / `descriptionEN` | Tag description |
+| `titleEN` | Tag title |
+| `descriptionEN` | Tag description |
 
 #### `genres`
 
 | Field | Description |
 |-------|-------------|
 | `id` | Genre ID |
-| `titleRU` / `titleEN` | Genre title |
-| `descriptionRU` / `descriptionEN` | Genre description |
+| `titleEN` | Genre title |
+| `descriptionEN` | Genre description |
 
 ### Latest version of each story (group by `gidOrId`)
 
@@ -297,7 +373,7 @@ The response follows the standard [Typesense search response schema](https://typ
 ### Article links
 
 ```
-https://app.sensortower.com/feature-insights/#news/view/{id}
+https://app.sensortower.com/playliner/#news/view/{id}
 ```
 
 ## Filter, Sort & Group Syntax

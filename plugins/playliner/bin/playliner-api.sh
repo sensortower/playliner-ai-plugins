@@ -5,7 +5,7 @@
 # Usage:
 #   playliner-api.sh <endpoint> [json-body]
 #
-#   endpoint : articles | games | tags | genres
+#   endpoint : articles | games | tags | genres | analytics
 #   json-body: Typesense search payload as a JSON string (defaults to '{}')
 #
 # Reads credentials from $PLAYLINER_CRED_FILE (default ~/.config/playliner/credentials),
@@ -36,11 +36,11 @@ fi
 BASE_URL="${PLAYLINER_BASE_URL:-https://app.sensortower.com/playliner/api}"
 BASE_URL="${BASE_URL%/}"
 
-endpoint="${1:?endpoint required: articles|games|tags|genres|usage}"
+endpoint="${1:?endpoint required: articles|games|tags|genres|analytics|usage}"
 if [[ $# -ge 2 ]]; then body="$2"; else body='{}'; fi
 
 case "$endpoint" in
-  articles|games|tags|genres)
+  articles|games|tags|genres|analytics)
     resp="$(printf '%s' "$body" | curl -sS -X POST "$BASE_URL/v1/external/$endpoint" \
       -H "Authorization: Bearer $PLAYLINER_TOKEN" \
       -H "Content-Type: application/json" \
@@ -55,7 +55,7 @@ case "$endpoint" in
       -w $'\n%{http_code}')"
     ;;
   *)
-    echo "ERROR: unknown endpoint '$endpoint' (expected articles|games|tags|genres|usage)" >&2
+    echo "ERROR: unknown endpoint '$endpoint' (expected articles|games|tags|genres|analytics|usage)" >&2
     exit 2
     ;;
 esac
