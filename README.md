@@ -1,8 +1,15 @@
-# Playliner Claude Code Plugin
+# Playliner AI Plugins
 
-Search Playliner game-industry news, games, tags, and genres directly from Claude Code. All answers are grounded strictly in Playliner articles — no hallucination.
+Search Playliner game-industry news, games, tags, and genres directly from your AI coding agent — Claude Code, OpenAI Codex, or Cursor. All answers are grounded strictly in Playliner articles — no hallucination.
 
-## Quick start (recommended)
+Plugin availability is tool-specific:
+
+* **Claude Code** reads the marketplace from `.claude-plugin/marketplace.json`
+* **VS Code** uses the same Claude-compatible marketplace format
+* **OpenAI Codex** reads the marketplace from `.agents/plugins/marketplace.json`
+* **Cursor** reads `.cursor-plugin/marketplace.json` (Team/Enterprise marketplace import)
+
+## Quick start — Claude Code (recommended)
 
 The easiest way — let Claude Code install and drive everything for you:
 
@@ -15,43 +22,86 @@ The easiest way — let Claude Code install and drive everything for you:
 
 3. Just send your question about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
 
+## Quick start — OpenAI Codex
+
+1. Create a new empty folder and download [`AGENTS.md`](./user-local-instructions/AGENTS.md) into it.
+2. Start Codex in that folder:
+
+   ```
+   codex
+   ```
+
+   Approve network and file-write requests when asked (the skill calls
+   `app.sensortower.com` with `curl` and stores your API token in `~/.config/playliner/`),
+   or run with a permissive approval mode.
+3. Send your question about mobile games. On first run the agent offers to install the skill.
+
+## Quick start — Cursor
+
+1. Create a new empty folder and download [`AGENTS.md`](./user-local-instructions/AGENTS.md) into it.
+2. Open the folder in Cursor (or run `cursor-agent` in it).
+3. Send your question about mobile games. On first run the agent offers to install the skill.
+
 ## Manual installation
 
-If you'd rather install the plugin yourself:
+### Claude Code
 
-### 1. Add the Playliner marketplace
-
-Run Claude Code:
-
-```
-claude --permission-mode auto
-```
-
-In Claude Code, run:
+Run Claude Code (`claude --permission-mode auto`), then:
 
 ```
 /plugin marketplace add sensortower/playliner-ai-plugins
-```
-
-### 2. Install the plugin
-
-```
 /plugin install playliner@playliner-ai-plugins
-```
-
-### 3. Reload plugins
-
-```
 /reload-plugins
 ```
 
-### 4. Use it
+Use it:
 
 ```
 /playliner:playliner-search what are the latest monetization updates for Clash of Clans?
 ```
 
-On first use, the plugin will ask for your Playliner API token. You can find it on the [API settings page](https://app.sensortower.com/users/edit/api-settings).
+### VS Code
+
+Agent plugins consume the same Claude-format marketplace. In `Preferences: Open User Settings (JSON)` add:
+
+```json
+{
+  "chat.plugins.marketplaces": [
+    "sensortower/playliner-ai-plugins"
+  ]
+}
+```
+
+then install `playliner` from the Extensions view (search `@agentPlugins`).
+
+### OpenAI Codex
+
+```bash
+codex plugin marketplace add sensortower/playliner-ai-plugins
+```
+
+Then, inside a Codex session, run `/plugins`, install `playliner` from the
+`playliner-ai-plugins` marketplace, and start a new session.
+Invoke with `$playliner-search <your question>` (or via `/skills`).
+Update later with `codex plugin marketplace upgrade playliner-ai-plugins`.
+
+Zero-install alternative: copy `plugins/playliner/skills/playliner-search/` from this repo into `~/.agents/skills/`.
+
+### Cursor
+
+Individual users: clone this repo and copy the skill into Cursor's skills folder:
+
+```bash
+git clone --depth 1 https://github.com/sensortower/playliner-ai-plugins
+mkdir -p ~/.cursor/skills
+cp -r playliner-ai-plugins/plugins/playliner/skills/playliner-search ~/.cursor/skills/
+```
+
+Invoke with `/playliner-search` in the Agent chat, or just ask the agent to "use the playliner-search skill".
+
+Team/Enterprise: an admin can import this repo as a team marketplace (Dashboard → Plugins → Team Marketplaces → Add Marketplace → Import from Repo), after which the plugin installs from the marketplace panel.
+
+On first use, the skill will ask for your Playliner API token. You can find it on the [API settings page](https://app.sensortower.com/users/edit/api-settings).
 
 ## Billing for article views
 
@@ -95,4 +145,9 @@ COST   = 600 + 235 + 376      = 1211 data credits
 
 ## Requirements
 
-- Claude Code (claude.ai/code)
+- One of: Claude Code (claude.ai/code), OpenAI Codex, Cursor, or VS Code with agent plugins
+- `bash` and `curl` for the bundled API helper (on Windows: Git Bash or WSL)
+
+## Contributing
+
+See [`CLAUDE.md`](./CLAUDE.md) for the maintainer release checklist.

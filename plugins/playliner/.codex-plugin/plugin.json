@@ -1,13 +1,11 @@
 {
   "name": "playliner",
-  "displayName": "Playliner",
   "description": "Search articles in the Playliner database",
   "version": "2.5.0",
   "author": {
     "name": "SensorTower"
   },
   "homepage": "https://app.sensortower.com/playliner/",
-  "category": "productivity",
   "keywords": ["games", "news", "gaming", "mobile", "analytics"],
-  "$schema": "https://code.claude.com/schemas/plugin.json"
+  "skills": "./skills/"
 }

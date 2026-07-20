@@ -7,7 +7,6 @@
     "name": "SensorTower"
   },
   "homepage": "https://app.sensortower.com/playliner/",
-  "category": "productivity",
   "keywords": ["games", "news", "gaming", "mobile", "analytics"],
-  "$schema": "https://code.claude.com/schemas/plugin.json"
+  "skills": "./skills/"
 }

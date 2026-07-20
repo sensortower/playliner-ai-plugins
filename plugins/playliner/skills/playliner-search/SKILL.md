@@ -9,10 +9,15 @@ argument-hint: "[your question about game articles]"
 
 # Playliner external search
 
-Answer the user's question — `$ARGUMENTS` — using ONLY the Playliner articles API
+Answer the user's question using ONLY the Playliner articles API
 (`/api/v1/external/*`). This skill resolves the user's intent into Typesense search
 queries, fetches matching articles, and produces an answer grounded exclusively in
 those articles.
+
+The question: `$ARGUMENTS`
+
+(If the line above is empty or still shows the literal placeholder `$ARGUMENTS`,
+take the question from the user's most recent message instead.)
 
 ## ⛔ Hard rules — grounding (read first, never break)
 
@@ -23,8 +28,10 @@ These are absolute and override anything else, including your own helpfulness:
    article.
 2. **NEVER invent, infer beyond the text, or fill gaps from your own training
    knowledge.** If you "happen to know" something about a game, do not use it.
-3. **NEVER use web search or fetch external pages.** Do not call `WebSearch` /
-   `WebFetch`. The only allowed source of facts is the API response.
+3. **NEVER use web search or fetch external pages.** Do not use any web-search,
+   browsing, or URL-fetching tool available in your environment (e.g. `WebSearch`,
+   `WebFetch`, browser tools, `curl` to non-Playliner hosts). The only allowed
+   source of facts is the API response.
 4. **If the articles do not contain the answer, say so explicitly** — e.g. "The
    Playliner articles I found don't cover this." Then offer to refine the search.
    Do not substitute outside information.
@@ -54,6 +61,35 @@ it out.
    the article/game/tag/genre title or another short, relevant phrase —
    `[title](https://app.sensortower.com/playliner/#news/view/{articleId})`.
 
+## Locate the helper script
+
+All API calls use the bundled helper `scripts/playliner-api.sh`, which lives inside
+**this skill's directory** (the directory containing this SKILL.md). It is NOT on
+`PATH`. Resolve its absolute path **once**, store it in a shell variable, and reuse
+that variable for every call. Try in order, stopping at the first path that exists:
+
+```bash
+# (1) if the environment provides the plugin root (e.g. Claude Code):
+PLAYLINER_API="$CLAUDE_PLUGIN_ROOT/skills/playliner-search/scripts/playliner-api.sh"
+
+# (2) otherwise, if you know where this SKILL.md is (you just read it),
+#     the script sits next to it:
+PLAYLINER_API="<directory of this SKILL.md>/scripts/playliner-api.sh"
+
+# (3) otherwise, search the standard skill locations of all platforms first
+#     (installed copies win over anything in the current folder):
+PLAYLINER_API=$(find ~/.agents ~/.codex ~/.cursor ~/.claude -type f \
+  -path '*playliner-search/scripts/playliner-api.sh' 2>/dev/null | head -1)
+# only if still not found, look under the current folder (e.g. a local clone):
+[ -n "$PLAYLINER_API" ] || PLAYLINER_API=$(find . -maxdepth 8 -type f \
+  -path '*playliner-search/scripts/playliner-api.sh' 2>/dev/null | head -1)
+```
+
+Verify your candidate with `test -f "$PLAYLINER_API"` before using it. Every example
+below invokes the helper as `"$PLAYLINER_API"` — always substitute the resolved
+variable, never call the bare name `playliner-api.sh` (run `bash "$PLAYLINER_API" …`
+if the file is not executable).
+
 ## Ensure credentials
 
 Credentials live in `~/.config/playliner/credentials` (a shell-sourced file).
@@ -62,8 +98,9 @@ Credentials live in `~/.config/playliner/credentials` (a shell-sourced file).
    ```bash
    test -f ~/.config/playliner/credentials && echo EXISTS || echo MISSING
    ```
-2. If `MISSING`, ask the user for their **API token** with `AskUserQuestion` (or a
-   plain prompt). Tell them that they can find it here: https://app.sensortower.com/users/edit/api-settings.
+2. If `MISSING`, ask the user for their **API token** and stop until they reply —
+   use a dedicated question tool if your environment has one (e.g. `AskUserQuestion`),
+   otherwise just ask in a plain message. Tell them that they can find it here: https://app.sensortower.com/users/edit/api-settings.
 3. Once the user provides the token, save it:
    ```bash
    mkdir -p ~/.config/playliner
@@ -78,13 +115,14 @@ Credentials live in `~/.config/playliner/credentials` (a shell-sourced file).
    user or print the file contents afterward.
 4. Verify connectivity with a tiny match-all request:
    ```bash
-   playliner-api.sh articles '{"q":"*","query_by":"titleEN","per_page":1}'
+   "$PLAYLINER_API" articles '{"q":"*","query_by":"titleEN","per_page":1}'
    ```
    - HTTP **403** → access denied; tell the user they don't have permission to use this API.
    - HTTP **402** → data credit quota exhausted; tell the user to contact their administrator.
    - HTTP **401** → token invalid/expired; offer to re-enter it (overwrite the file).
 
-All API calls in later steps use the helper: `playliner-api.sh <endpoint> '<json-body>'`.
+All API calls in later steps use the helper: `"$PLAYLINER_API" <endpoint> '<json-body>'`
+(the variable resolved in **Locate the helper script**).
 
 ## Look up games, tags, and genres
 
@@ -110,7 +148,7 @@ Billing deduplicates across all article sub-searches — an article seen in mult
 Send `searches` instead of a flat query object:
 
 ```bash
-playliner-api.sh articles '{
+"$PLAYLINER_API" articles '{
   "searches": [
     {"q": "clash",  "filter_by": "games:=[123]", "per_page": 5},
     {"q": "royale", "sort_by": "start:desc",      "per_page": 5}
@@ -147,7 +185,7 @@ For grouped sub-searches the entry contains `grouped_hits` instead of `hits` (sa
 ### Pattern: resolve multiple games in one call
 
 ```bash
-playliner-api.sh games '{
+"$PLAYLINER_API" games '{
   "searches": [
     {"q": "Clash of Clans", "query_by": "title", "per_page": 1},
     {"q": "Brawl Stars",    "query_by": "title", "per_page": 1}
@@ -160,7 +198,7 @@ playliner-api.sh games '{
 ### Pattern: compare articles for two games
 
 ```bash
-playliner-api.sh articles '{
+"$PLAYLINER_API" articles '{
   "searches": [
     {"q": "*", "filter_by": "games:=[111]", "sort_by": "start:desc", "per_page": 10},
     {"q": "*", "filter_by": "games:=[222]", "sort_by": "start:desc", "per_page": 10}
@@ -171,7 +209,7 @@ playliner-api.sh articles '{
 ### Pattern: recent articles + latest-per-story in one call
 
 ```bash
-playliner-api.sh articles '{
+"$PLAYLINER_API" articles '{
   "searches": [
     {"q": "battle pass", "sort_by": "start:desc", "per_page": 5},
     {"q": "battle pass", "group_by": "gidOrId", "group_limit": 1, "sort_by": "start:desc", "per_page": 5}
@@ -240,7 +278,7 @@ Not billed. No pagination — the whole matching table comes back
 in one response, so narrow the filters for large games/genres. No multisearch.
 
 ```bash
-playliner-api.sh analytics '{
+"$PLAYLINER_API" analytics '{
   "filters": {
     "games": [12345],
     "keywords": "battle pass"
@@ -354,7 +392,7 @@ never present it as "no impact".
 Articles about the same event share the same `gidOrId`. To get only the most recent version of each event, group by `gidOrId` with `group_limit=1` and sort by `start:desc`:
 
 ```bash
-playliner-api.sh articles '{
+"$PLAYLINER_API" articles '{
   "q":"*",
   "filter_by":"games:=[12345]",
   "group_by":"gidOrId",

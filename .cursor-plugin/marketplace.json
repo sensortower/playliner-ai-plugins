@@ -1,0 +1,14 @@
+{
+  "name": "playliner-ai-plugins",
+  "owner": {
+    "name": "Sensortower"
+  },
+  "description": "Playliner AI plugins for Cursor",
+  "plugins": [
+    {
+      "name": "playliner",
+      "description": "Search articles in the Playliner database",
+      "source": "./plugins/playliner"
+    }
+  ]
+}

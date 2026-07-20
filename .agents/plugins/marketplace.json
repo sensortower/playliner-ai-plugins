@@ -1,0 +1,23 @@
+{
+  "name": "playliner-ai-plugins",
+  "interface": {
+    "displayName": "Playliner AI Plugins"
+  },
+  "plugins": [
+    {
+      "name": "playliner",
+      "description": "Search articles in the Playliner database",
+      "category": "Productivity",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sensortower/playliner-ai-plugins.git",
+        "path": "./plugins/playliner",
+        "ref": "master"
+      }
+    }
+  ]
+}

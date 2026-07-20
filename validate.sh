@@ -34,10 +34,13 @@ validate_plugin_folders() {
   done
 }
 
-# 2. plugin.json files must follow the plugin spec
+# 2. plugin.json files must follow the plugin spec (all platforms)
 validate_plugin_jsons() {
   echo "Checking plugin.json files..."
-  for plugin_json in "$PLUGINS_DIR"/*/.claude-plugin/plugin.json; do
+  for plugin_json in \
+    "$PLUGINS_DIR"/*/.claude-plugin/plugin.json \
+    "$PLUGINS_DIR"/*/.cursor-plugin/plugin.json \
+    "$PLUGINS_DIR"/*/.codex-plugin/plugin.json; do
     [[ -f "$plugin_json" ]] || continue
     rel="${plugin_json#"$ROOT/"}"
 
@@ -75,15 +78,78 @@ validate_plugin_jsons() {
   done
 }
 
-# 3. marketplace.json must reflect the current plugin state
+# 2b. Every plugin must ship all three platform manifests, and their
+#     name/version/description must be identical (single source of truth).
+validate_manifest_consistency() {
+  echo "Checking cross-platform manifest consistency..."
+  for dir in "$PLUGINS_DIR"/*/; do
+    [[ -d "$dir" ]] || continue
+    local_rel="${dir#"$ROOT/"}"
+
+    local ref_json="" ref_manifest=""
+    for manifest_dir in .claude-plugin .cursor-plugin .codex-plugin; do
+      manifest="$dir$manifest_dir/plugin.json"
+      if [[ ! -f "$manifest" ]]; then
+        error "${local_rel}: missing $manifest_dir/plugin.json (all plugins must support Claude Code, Cursor, and Codex)"
+        continue
+      fi
+      fields=$(jq -S '{name, version, description}' "$manifest" 2>/dev/null) || continue
+      if [[ -z "$ref_json" ]]; then
+        ref_json="$fields"
+        ref_manifest="$manifest_dir"
+      elif [[ "$fields" != "$ref_json" ]]; then
+        error "${local_rel}: $manifest_dir/plugin.json name/version/description differ from $ref_manifest/plugin.json — keep them identical"
+      fi
+    done
+  done
+}
+
+# 2c. The Claude-only bin/-on-PATH layout must not come back — helper scripts
+#     belong inside the skill (skills/<skill>/scripts/) so all platforms find them.
+validate_no_bin_dirs() {
+  for dir in "$PLUGINS_DIR"/*/bin; do
+    [[ -d "$dir" ]] || continue
+    error "${dir#"$ROOT/"}: plugin bin/ directories are not allowed — put scripts in skills/<skill>/scripts/ instead"
+  done
+}
+
+# 3. marketplace files must reflect the current plugin state.
+# Compare a fresh regeneration against the on-disk files directly (not via
+# `git diff`, which ignores untracked files) so drift is caught even before the
+# catalogs are committed.
 validate_marketplace() {
-  echo "Checking marketplace.json..."
+  echo "Checking marketplace files..."
+
+  local marketplaces=(
+    ".claude-plugin/marketplace.json"
+    ".cursor-plugin/marketplace.json"
+    ".agents/plugins/marketplace.json"
+  )
+
+  # Snapshot the current files, regenerate, compare, then restore.
+  # All three files are named marketplace.json, so flatten the path for a
+  # unique backup filename (basename alone would collide and clobber).
+  local backup
+  backup=$(mktemp -d)
+  for marketplace in "${marketplaces[@]}"; do
+    saved="$backup/${marketplace//\//_}"
+    [[ -f "$ROOT/$marketplace" ]] && cp "$ROOT/$marketplace" "$saved"
+  done
+
   bash "$ROOT/update-marketplace.sh" > /dev/null
 
-  if ! git -C "$ROOT" diff --exit-code .claude-plugin/marketplace.json > /dev/null 2>&1; then
-    error "marketplace.json is out of date — run update-marketplace.sh to regenerate"
-    git -C "$ROOT" checkout -- .claude-plugin/marketplace.json 2>/dev/null || true
-  fi
+  for marketplace in "${marketplaces[@]}"; do
+    saved="$backup/${marketplace//\//_}"
+    if [[ ! -f "$saved" ]]; then
+      error "$marketplace is missing — run update-marketplace.sh to generate it"
+    elif ! cmp -s "$saved" "$ROOT/$marketplace"; then
+      error "$marketplace is out of date — run update-marketplace.sh to regenerate"
+    fi
+    # Restore the pre-check version so validation never mutates the tree.
+    [[ -f "$saved" ]] && cp "$saved" "$ROOT/$marketplace"
+  done
+
+  rm -rf "$backup"
 }
 
 # 4. Skills, commands, and agents must have a valid lowercase-hyphen name: header
@@ -103,6 +169,17 @@ validate_components() {
       error "$rel: missing required 'name:' in frontmatter"
     elif ! is_valid_kebab_name "$name"; then
       error "$rel: 'name: $name' must be lowercase letters, numbers, and hyphens only"
+    fi
+
+    if ! awk 'BEGIN{f=0} /^---/{f++; next} f==1 && /^description:[[:space:]]*[^[:space:]]/{found=1; exit} END{exit !found}' "$skill_file"; then
+      error "$rel: missing required 'description:' in frontmatter (needed by Claude Code, Cursor, and Codex)"
+    fi
+  done
+
+  for script_file in "$PLUGINS_DIR"/*/skills/*/scripts/*; do
+    [[ -f "$script_file" ]] || continue
+    if [[ ! -x "$script_file" ]]; then
+      error "${script_file#"$ROOT/"}: must be executable (chmod +x)"
     fi
   done
 
@@ -126,6 +203,8 @@ validate_components() {
 
 validate_plugin_folders
 validate_plugin_jsons
+validate_manifest_consistency
+validate_no_bin_dirs
 validate_marketplace
 validate_components
 
