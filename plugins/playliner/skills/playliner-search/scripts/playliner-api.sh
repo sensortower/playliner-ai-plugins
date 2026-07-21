@@ -55,7 +55,7 @@ fi
 BASE_URL="${PLAYLINER_BASE_URL:-https://app.sensortower.com/playliner/api}"
 BASE_URL="${BASE_URL%/}"
 
-endpoint="${1:?endpoint required: articles|games|tags|genres|analytics|usage}"
+endpoint="${1:?endpoint required: articles|games|tags|genres|analytics}"
 if [[ $# -ge 2 ]]; then body="$2"; else body='{}'; fi
 
 # Pass the bearer token via a curl config file (fd/temp file) instead of a
@@ -75,18 +75,8 @@ case "$endpoint" in
       --data-binary @- \
       -w $'\n%{http_code}')"
     ;;
-  usage)
-    # `usage` is a GET; body (if any) is a raw query string, not JSON.
-    # The default '{}' means "no query string", so don't append it.
-    qs=""
-    [[ "$body" != "{}" && -n "$body" ]] && qs="?$body"
-    resp="$(curl -sS -X GET "$BASE_URL/v1/external/usage$qs" \
-      --config "$AUTH_CFG" \
-      -H "Accept: application/json" \
-      -w $'\n%{http_code}')"
-    ;;
   *)
-    echo "ERROR: unknown endpoint '$endpoint' (expected articles|games|tags|genres|analytics|usage)" >&2
+    echo "ERROR: unknown endpoint '$endpoint' (expected articles|games|tags|genres|analytics)" >&2
     exit 2
     ;;
 esac
