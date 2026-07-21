@@ -4,9 +4,14 @@
   "description": "Search articles in the Playliner database",
   "version": "2.6.0",
   "author": {
-    "name": "SensorTower"
+    "name": "Sensor Tower"
   },
   "homepage": "https://app.sensortower.com/playliner/",
+  "repository": "https://github.com/sensortower/playliner-ai-plugins",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "category": "analytics",
   "keywords": ["games", "news", "gaming", "mobile", "analytics"],
+  "tags": ["mobile-games", "live-ops", "market-research", "news"],
   "skills": "./skills/"
 }

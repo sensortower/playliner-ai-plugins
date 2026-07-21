@@ -1,7 +1,7 @@
 {
   "name": "playliner-ai-plugins",
   "owner": {
-    "name": "Sensortower"
+    "name": "Sensor Tower"
   },
   "description": "Playliner AI plugins for Claude Code",
   "plugins": [

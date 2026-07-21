@@ -1,7 +1,6 @@
 ---
 name: playliner-search
 description: Search Playliner game-industry articles, games, tags, and genres through the /api/v1/external/* API and answer STRICTLY from the returned articles. Use when the user asks about game articles, releases, updates, monetization, event performance/impact analytics (revenue, downloads, DAU uptrends), or specific games/genres/tags and wants answers grounded only in Playliner data.
-disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash(*), Read, Write, AskUserQuestion
 argument-hint: "[your question about game articles]"
