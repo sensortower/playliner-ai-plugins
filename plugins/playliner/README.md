@@ -20,3 +20,7 @@ The bundled `playliner-search` skill teaches the agent to:
 ## Usage
 
 Invoke the skill with `/playliner-search <your question>`, or just ask about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
+
+## Calling the API directly
+
+The skill wraps the public Playliner HTTP API. Raw HTTP reference (base URL, auth, endpoints, payloads, errors): [`API.md`](../../API.md).
