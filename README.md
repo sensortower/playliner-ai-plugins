@@ -1,6 +1,6 @@
 # Playliner AI Plugins
 
-Search Playliner game-industry news, games, tags, and genres directly from your AI coding agent — Claude Code, OpenAI Codex, or Cursor. All answers are grounded strictly in Playliner articles — no hallucination.
+Search Playliner game-industry news, games, tags, and genres directly from your AI coding agent — Claude Code, Claude Desktop, OpenAI Codex, or Cursor. All answers are grounded strictly in Playliner articles — no hallucination.
 
 Plugin availability is tool-specific:
 
@@ -8,7 +8,9 @@ Plugin availability is tool-specific:
 * **OpenAI Codex** reads the marketplace from `.agents/plugins/marketplace.json`
 * **Cursor** reads `.cursor-plugin/marketplace.json` (Team/Enterprise marketplace import)
 
-## Quick start — Claude Code (recommended)
+## Quick start (recommended)
+
+### Claude Code
 
 The easiest way — let Claude Code install and drive everything for you:
 
@@ -21,7 +23,14 @@ The easiest way — let Claude Code install and drive everything for you:
 
 3. Just send your question about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
 
-## Quick start — OpenAI Codex
+### Claude Desktop
+
+Claude Desktop and the Claude CLI share the same environment, so you can install the
+plugin once and use it from both.
+
+Follow the step-by-step guide in [`claude-desktop-instruction.md`](./claude-desktop-instruction.md).
+
+### OpenAI Codex
 
 Requires Codex CLI 0.14x+
 
@@ -34,7 +43,7 @@ Requires Codex CLI 0.14x+
 
 3. Just send your question about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
 
-## Quick start — Cursor
+### Cursor (in development)
 
 1. Create a new empty folder and download [`AGENTS.md`](./user-local-instructions/cursor/AGENTS.md) into it.
 2. Open the folder in Cursor (or run `cursor-agent` in it).
@@ -93,8 +102,14 @@ On first use, the skill will ask for your Playliner API token. You can find it o
 
 ## Requirements
 
-- One of: Claude Code (claude.ai/code), OpenAI Codex, Cursor, or VS Code with agent plugins
+- One of: Claude Code (claude.ai/code), Claude Desktop, OpenAI Codex, Cursor, or VS Code with agent plugins
 - `bash` and `curl` for the bundled API helper (on Windows: Git Bash or WSL)
+
+## Using the API directly
+
+The plugin is a wrapper around the public Playliner HTTP API. To call it yourself
+(curl, scripts, your own integration), see [`API.md`](./API.md) — base URL,
+authentication, endpoints, request/response formats, and errors.
 
 ## Contributing
 
