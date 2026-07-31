@@ -8,7 +8,9 @@ Plugin availability is tool-specific:
 * **OpenAI Codex** reads the marketplace from `.agents/plugins/marketplace.json`
 * **Cursor** reads `.cursor-plugin/marketplace.json` (Team/Enterprise marketplace import)
 
-## Quick start — Claude Code (recommended)
+## Quick start (recommended)
+
+### Claude Code
 
 The easiest way — let Claude Code install and drive everything for you:
 
@@ -21,14 +23,14 @@ The easiest way — let Claude Code install and drive everything for you:
 
 3. Just send your question about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
 
-## Quick start — Claude Desktop
+### Claude Desktop
 
 Claude Desktop and the Claude CLI share the same environment, so you can install the
 plugin once and use it from both.
 
 Follow the step-by-step guide in [`claude-desktop-instruction.md`](./claude-desktop-instruction.md).
 
-## Quick start — OpenAI Codex
+### OpenAI Codex
 
 Requires Codex CLI 0.14x+
 
@@ -41,7 +43,7 @@ Requires Codex CLI 0.14x+
 
 3. Just send your question about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
 
-## Quick start — Cursor
+### — Cursor (in development)
 
 1. Create a new empty folder and download [`AGENTS.md`](./user-local-instructions/cursor/AGENTS.md) into it.
 2. Open the folder in Cursor (or run `cursor-agent` in it).
