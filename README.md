@@ -43,7 +43,7 @@ Requires Codex CLI 0.14x+
 
 3. Just send your question about mobile games — e.g. *"latest monetization updates for Clash of Clans"*.
 
-### — Cursor (in development)
+### Cursor (in development)
 
 1. Create a new empty folder and download [`AGENTS.md`](./user-local-instructions/cursor/AGENTS.md) into it.
 2. Open the folder in Cursor (or run `cursor-agent` in it).
