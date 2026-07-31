@@ -49,6 +49,11 @@ Requires Codex CLI 0.14x+
 2. Open the folder in Cursor (or run `cursor-agent` in it).
 3. Send your question about mobile games. On first run the agent offers to install the skill.
 
+## Direct API access
+
+The plugin wraps a public HTTP API you can call yourself with curl — no agent needed.
+See [`API.md`](./API.md): base URL, authentication, endpoints, payloads, errors.
+
 ## Manual installation
 
 ### Claude Code
