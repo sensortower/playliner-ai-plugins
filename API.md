@@ -43,8 +43,8 @@ The four search endpoints (`articles`, `games`, `tags`, `genres`) take a
 |----------|---------------|---------|-------------|
 | `articles`  | `POST /v1/external/articles`  | Full article search | Yes |
 | `games`     | `POST /v1/external/games`     | Resolve game name → numeric id | Yes |
-| `tags`      | `POST /v1/external/tags`      | Resolve tag phrase → canonical name | Yes |
-| `genres`    | `POST /v1/external/genres`    | Resolve genre phrase → canonical name | Yes |
+| `tags`      | `POST /v1/external/tags`      | Resolve tag phrase → Playliner tag name / tag id | Yes |
+| `genres`    | `POST /v1/external/genres`    | Resolve genre phrase → Playliner genre name / genre id | Yes |
 | `analytics` | `POST /v1/external/analytics` | Event performance analytics table | No |
 
 ---
@@ -59,7 +59,7 @@ Standard Typesense search parameters apply. The ones you will actually use:
 |-----------|------|-------------|
 | `q` | string | Search phrase. `*` matches everything |
 | `query_by` | string | Comma-separated fields to search in. Required unless `q` is `*` — a missing or mismatched `query_by` is the usual cause of a 422 |
-| `filter_by` | string | Filter expression, e.g. `games:=[12345]`, `start:>1700000000` |
+| `filter_by` | string | Filter expression, e.g. `games:=[1556]`, `tags:=[865]`, `genres:=[607]`, `start:>1700000000` |
 | `sort_by` | string | e.g. `start:desc`, `_text_match:desc` |
 | `group_by` / `group_limit` | string / int | Collapse results, e.g. `gidOrId` + `1` |
 | `page` / `per_page` | int | Paging |
@@ -94,7 +94,9 @@ instead of `hits[].document`.
 | `titleEN` | Article title |
 | `descriptionEN` | Short description |
 | `blocksEN` | Full article body, split into blocks; media URLs (`.jpg`, `.mp4`) appear inline as separate array elements |
-| `tagsEN` | Tag names attached to the article |
+| `tags` | Tag IDs attached to the article (filter with `tags:=[id]`) |
+| `tagsEN` | Tag names attached to the article, plus synonyms of those names to improve search (e.g. tag `Pass` also adds `battle pass`, `season pass`) |
+| `genres` | Genre IDs of linked games (filter with `genres:=[id]`) |
 | `genresEN` | Genre names of linked games |
 | `games` | Linked game IDs |
 | `gamesTitleEN` | Titles of linked games |
@@ -142,7 +144,7 @@ Latest articles for that game:
 curl -sS -X POST https://app.sensortower.com/playliner/api/v1/external/articles \
   -H "Authorization: Bearer $PLAYLINER_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"q":"*","filter_by":"games:=[12345]","sort_by":"start:desc","per_page":20}'
+  -d '{"q":"*","filter_by":"games:=[1556]","sort_by":"start:desc","per_page":20}'
 ```
 
 Only the most recent version of each event (deduplicate repeated launches by
@@ -154,7 +156,7 @@ curl -sS -X POST https://app.sensortower.com/playliner/api/v1/external/articles 
   -H "Content-Type: application/json" \
   -d '{
         "q":"*",
-        "filter_by":"games:=[12345]",
+        "filter_by":"games:=[1556]",
         "group_by":"gidOrId",
         "group_limit":1,
         "sort_by":"start:desc",
@@ -211,7 +213,7 @@ or genres. Multisearch is not supported.
 curl -sS -X POST https://app.sensortower.com/playliner/api/v1/external/analytics \
   -H "Authorization: Bearer $PLAYLINER_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"filters":{"games":[12345],"keywords":"battle pass"},"lang":"en"}'
+  -d '{"filters":{"games":[1556],"keywords":"battle pass"},"lang":"en"}'
 ```
 
 ### Request body
