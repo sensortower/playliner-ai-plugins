@@ -125,11 +125,13 @@ All API calls in later steps use the helper: `"$PLAYLINER_API" <endpoint> '<json
 
 ## Look up games, tags, and genres
 
-Articles can be filtered by game, tag, or genre. Use the corresponding endpoints to resolve user input into IDs or canonical names:
+Articles can be filtered by game, tag, or genre. Use the corresponding endpoints to turn user input into Playliner IDs:
 
 - `/v1/external/games` — game name → numeric id
-- `/v1/external/tags` — tag phrase → canonical name
-- `/v1/external/genres` — genre phrase → canonical name
+- `/v1/external/tags` — tag phrase → Playliner tag name / tag id
+- `/v1/external/genres` — genre phrase → Playliner genre name / genre id
+
+Pass the resolved ids to `articles` via `filter_by` on the `games`, `tags`, and `genres` fields, e.g. `games:=[1556]`, `tags:=[865]`, `genres:=[607]` (combine with `&&`).
 
 **Cache** resolved results in `~/.config/playliner/cache/` (`games.json`, `tags.json`, `genres.json`). Reuse a cached entry if it is younger than 7 days; otherwise fetch and update the cache.
 
@@ -147,7 +149,7 @@ Send `searches` instead of a flat query object:
 ```bash
 "$PLAYLINER_API" articles '{
   "searches": [
-    {"q": "clash",  "filter_by": "games:=[123]", "per_page": 5},
+    {"q": "clash",  "filter_by": "games:=[1556]", "per_page": 5},
     {"q": "royale", "sort_by": "start:desc",      "per_page": 5}
   ]
 }'
@@ -197,8 +199,8 @@ For grouped sub-searches the entry contains `grouped_hits` instead of `hits` (sa
 ```bash
 "$PLAYLINER_API" articles '{
   "searches": [
-    {"q": "*", "filter_by": "games:=[111]", "sort_by": "start:desc", "per_page": 10},
-    {"q": "*", "filter_by": "games:=[222]", "sort_by": "start:desc", "per_page": 10}
+    {"q": "*", "filter_by": "games:=[1556]", "sort_by": "start:desc", "per_page": 10},
+    {"q": "*", "filter_by": "games:=[1504]", "sort_by": "start:desc", "per_page": 10}
   ]
 }'
 ```
@@ -246,8 +248,8 @@ Base URL: `https://app.sensortower.com/playliner/api`.
 |----------|---------|--------------|
 | `articles` | Full article search | Yes |
 | `games`    | Resolve game name → id | Yes |
-| `tags`     | Resolve tag phrase → canonical name | Yes |
-| `genres`   | Resolve genre phrase → canonical name | Yes |
+| `tags`     | Resolve tag phrase → Playliner tag name / tag id | Yes |
+| `genres`   | Resolve genre phrase → Playliner genre name / genre id | Yes |
 | `analytics` | Event performance analytics table | No |
 
 ### `analytics` — event performance analytics
@@ -263,7 +265,7 @@ in one response, so narrow the filters for large games/genres. No multisearch.
 ```bash
 "$PLAYLINER_API" analytics '{
   "filters": {
-    "games": [12345],
+    "games": [1556],
     "keywords": "battle pass"
   },
   "lang": "en"
@@ -336,7 +338,9 @@ never present it as "no impact".
 | `titleEN` | Article title |
 | `descriptionEN` | Article short description |
 | `blocksEN` | Full article body text, split into blocks |
-| `tagsEN` | Tag names attached to the article |
+| `tags` | Tag IDs attached to the article (filter with `tags:=[id]`) |
+| `tagsEN` | Tag names attached to the article, plus synonyms of those names to improve search (e.g. tag `Pass` also adds `battle pass`, `season pass`) |
+| `genres` | Genre IDs of linked games (filter with `genres:=[id]`) |
 | `genresEN` | Genre names of linked games |
 | `games` | Linked game IDs |
 | `gamesTitleEN` | Titles of linked games |
@@ -377,7 +381,7 @@ Articles about the same event share the same `gidOrId`. To get only the most rec
 ```bash
 "$PLAYLINER_API" articles '{
   "q":"*",
-  "filter_by":"games:=[12345]",
+  "filter_by":"games:=[1556]",
   "group_by":"gidOrId",
   "group_limit":1,
   "sort_by":"start:desc",
